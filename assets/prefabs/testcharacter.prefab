@@ -1,0 +1,12 @@
+{
+  "persisted" : true,
+  "location" : {},
+  "NameTag": { "text": "test" },
+  "Character": {},
+  "Network" : {},
+  "AliveCharacter": {},
+  "CharacterMovement" : {},
+  "Trigger" : {
+    "detectGroups" : ["engine:debris", "engine:sensor"]
+  }
+}
