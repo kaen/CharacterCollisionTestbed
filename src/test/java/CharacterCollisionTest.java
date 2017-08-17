@@ -9,6 +9,8 @@ import org.terasology.logic.characters.CharacterTeleportEvent;
 import org.terasology.logic.location.LocationComponent;
 import org.terasology.math.geom.Vector3f;
 import org.terasology.math.geom.Vector3i;
+import org.terasology.world.WorldProvider;
+import org.terasology.world.block.Block;
 
 /*
  * Copyright 2017 MovingBlocks
@@ -26,36 +28,45 @@ import org.terasology.math.geom.Vector3i;
  * limitations under the License.
  */
 public class CharacterCollisionTest extends CharacterCollisionTestEnvironment {
+    private static final int SURFACE_HEIGHT = 40;
     private Logger logger = LoggerFactory.getLogger(CharacterCollisionTest.class);
 
     @Test
     public void testCollision() {
-        forceAndWaitForGeneration(Vector3i.zero());
-
         for (int i = 0; i < 20; i++) {
             for (int j = 0; j < 20; j++) {
                 spawnTestCharacter(i, j);
             }
         }
 
-        runWhile(()-> {
-            for (EntityRef entity : getHostContext().get(EntityManager.class).getEntitiesWith(CharacterMovementComponent.class)) {
-                logger.debug("h: {} r: {} y: {}",
-                        entity.getComponent(CharacterMovementComponent.class).height,
-                        entity.getComponent(CharacterMovementComponent.class).radius,
-                        entity.getComponent(LocationComponent.class).getWorldPosition().y
-                );
+        runWhile(this::logDebugInfo);
+    }
 
-                entity.send(new CharacterMoveInputEvent(
-                        0, 0, 0, Vector3f.zero(),
-                        false, false, false, 0
-                ));
-            }
-            return true;
-        });
+    private boolean logDebugInfo() {
+        for (EntityRef entity : getHostContext().get(EntityManager.class).getEntitiesWith(CharacterMovementComponent.class)) {
+            logger.debug("h: {} r: {} y: {}",
+                    entity.getComponent(CharacterMovementComponent.class).height,
+                    entity.getComponent(CharacterMovementComponent.class).radius,
+                    entity.getComponent(LocationComponent.class).getWorldPosition().y
+            );
+
+            entity.send(new CharacterMoveInputEvent(
+                    0, 0, 0, Vector3f.zero(),
+                    false, false, false, 0
+            ));
+        }
+
+        for (int i = 0; i < 2; i++) {
+            Block block = getHostContext().get(WorldProvider.class).getBlock(new Vector3i(0, SURFACE_HEIGHT + i, 0));
+            logger.debug("Y={}: {}", SURFACE_HEIGHT + i, block);
+        }
+        return true;
     }
 
     private void spawnTestCharacter(float i, float j) {
+        Vector3i pos = new Vector3i(i*2, SURFACE_HEIGHT + 1, j*2);
+        forceAndWaitForGeneration(pos);
+
         EntityManager entityManager = getHostContext().get(EntityManager.class);
         EntityRef entity = entityManager.create("CharacterCollisionTestbed:testcharacter");
         CharacterMovementComponent characterMovementComponent = entity.getComponent(CharacterMovementComponent.class);
@@ -63,7 +74,6 @@ public class CharacterCollisionTest extends CharacterCollisionTestEnvironment {
         characterMovementComponent.radius = j / 10.0f;
         entity.saveComponent(characterMovementComponent);
 
-        Vector3i pos = new Vector3i(i*2, 41, j*2);
         entity.send(new CharacterTeleportEvent(pos.toVector3f()));
 
         runUntil(()-> {
